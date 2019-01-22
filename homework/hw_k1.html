@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>hw_k1</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 48.46, lng: 35.0},
+          zoom: 12
+        });
+		
+		window.navigator.geolocation.getCurrentPosition( answer => {
+			//console.log(answer);
+			var user = new google.maps.Marker({
+				position: { 
+					lat: answer.coords.latitude,
+					lng: answer.coords.longitude
+				},
+				title: "Вы здесь"
+				});
+			user.setMap(map);
+			
+			//console.log(offices);
+			var temp = 10000;
+			var offices_arr = [];
+			
+			for (var i_of = 0; i_of < offices.length; i_of++){
+				var office = new google.maps.Marker({
+					position: { lat: offices[i_of].coords.lat, lng: offices[i_of].coords.lng },
+					title: offices[i_of].title,
+					icon: "../source/images/branche-ico.png "
+				});
+				office.setMap(map);
+				office.addListener("click", (evt) =>{
+					line_delete();
+					line = new google.maps.Polyline({
+						path: [
+							user.position,
+							{lat: evt.latLng.lat(), lng: evt.latLng.lng()}
+							],
+						geodesic: true,
+						strokeColor: "#FF0000"
+					});
+					line.setMap(map);
+					
+					 marker2 = new google.maps.Marker({
+						position: {lat: evt.latLng.lat(), lng: evt.latLng.lng()}
+					  });
+					console.log((google.maps.geometry.spherical.computeDistanceBetween(user.position, marker2.position)/1000).toFixed(2) + " км.");
+					
+					/*var road = new google.maps.DirectionsService();
+					road.route({
+						origin: user.position,
+						destination: marker2.position,
+						travelMode: "DRIVING"
+					}, answer => {
+						console.log(answer);
+						var draw = new google.maps.DirectionsRenderer({
+							map: map
+						});
+						
+						draw.setDirections(answer);
+						
+					}, answer => {
+						console.log(answer);
+					} );                                        */
+					
+					
+				});
+				offices_arr.push(office);
+				
+				var d = google.maps.geometry.spherical.computeDistanceBetween(user.position, office.position);
+				//console.log( (d/1000).toFixed(2) + " км.");
+				if(temp > d){temp = d; var i_min = i_of};
+				if(i_of == offices.length - 1){is_min_val()};
+			
+			};
+			
+			var line_s;
+			var line;
+			function is_min_val(){
+					line_s = new google.maps.Polyline({
+						path: [
+							user.position,
+							offices_arr[i_min].position
+							],
+						geodesic: true,
+						strokeColor: "#FF0000"
+					});
+					line_s.setMap(map);
+				};
+				
+			function line_delete(){
+				line_s.setMap(null);
+				if (line){line.setMap(null)};
+			};
+					
+					
+		}, answer => {
+			console.log(answer);
+		});
+		
+			
+      };
+	
+			var URL = "https://courses.dp.ua/api/branches.php ";
+			var offices;
+			(async function(){
+				offices = await fetch(URL);
+				offices = await offices.json();
+			})();
+		
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJGSLhZ1WCWo0H4zEiq_aqUqfKMh7OX1U&callback=initMap&libraries=geometry"
+    async defer></script>
+  </body>
+</html>
